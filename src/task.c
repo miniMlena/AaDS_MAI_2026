@@ -101,8 +101,25 @@ void delete(Node **root_ptr, int value) {
     }
 }
 
+int rec_leaves_level(Node *root, int level, int *leaf_level) {
+    if (root == NULL) {
+        return 1;
+    }
+    if (root->LeftChild == NULL && root->RightChild == NULL) {
+        if (*leaf_level == -1) {
+            *leaf_level = level;
+            return 1;
+        } else {
+            return level == *leaf_level;
+        }
+    }
+
+    return rec_leaves_level(root->LeftChild, level + 1, leaf_level) && rec_leaves_level(root->RightChild, level + 1, leaf_level);
+}
+
 int same_leaves_level(Node *root) {
-    return 0;
+    int leaf_level = -1;
+    return rec_leaves_level(root, 0, &leaf_level);
 }
 
 int main() {
