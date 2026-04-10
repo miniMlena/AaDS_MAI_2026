@@ -55,11 +55,6 @@ int is_operator(char c) {
     return c == '+' || c == '-' || c == '*' || c == '/' || c == '^';
 }
 
-// для обработки возведения в степень
-int is_right_associative(char op) {
-    return op == '^';
-}
-
 // функции для стека операций
 Stack* create_stack(int size) {
     Stack* s = malloc(sizeof(Stack));
@@ -195,7 +190,7 @@ int is_unary_minus(Node* node) {
            node->left == NULL;
 }
 
-// проверка на скобки
+// проверка на скобки (вспомогательная функция для корректной печати выражения)
 int need_brackets(Node* parent, Node* child, int is_right_child) {
     if (child == NULL) return 0;
     if (child->type != NODE_OPERATOR) return 0;
@@ -212,11 +207,9 @@ int need_brackets(Node* parent, Node* child, int is_right_child) {
             return child_prec < parent_prec;
         }
     }
-
     if (child_prec < parent_prec) {
         return 1;
     }
-
     if (child_prec == parent_prec) {
         if (is_left_associative(parent->data.op)) {
             return is_right_child;
@@ -224,7 +217,6 @@ int need_brackets(Node* parent, Node* child, int is_right_child) {
             return !is_right_child;
         }
     }
-    
     return 0;
 }
 
@@ -236,12 +228,10 @@ void print_expression(Node* node) {
         printf("%d", node->data.number);
         return;
     }
-    
     if (node->type == NODE_VARIABLE) {
         printf("%c", node->data.variable);
         return;
     }
-    
     // унарный минус
     if (is_unary_minus(node)) {
         printf("-");
@@ -255,7 +245,6 @@ void print_expression(Node* node) {
         }
         return;
     }
-
     int need_left_paren = (node->left != NULL && node->left->type == NODE_OPERATOR && need_brackets(node, node->left, 0));
     int need_right_paren = (node->right != NULL && node->right->type == NODE_OPERATOR && need_brackets(node, node->right, 1));
 
@@ -355,7 +344,7 @@ Node* build_tree(const char* expr) {
             while (!is_empty_op(operators) && peek_op(operators) != '(') {
                 char top_op = peek_op(operators);
                 if ((get_priority(top_op) > get_priority(c)) ||
-                    (get_priority(top_op) == get_priority(c) && !is_right_associative(c))) {
+                    (get_priority(top_op) == get_priority(c) && is_left_associative(c))) {
                     char op = pop_op(operators);
                     Node* right = pop_stack(output);
                     Node* left = pop_stack(output);
@@ -388,10 +377,8 @@ Node* build_tree(const char* expr) {
             i++;
             continue;
         }
-        
         i++;
     }
-    
     // выталкиваем оставшиеся операторы
     while (!is_empty_op(operators)) {
         char op = pop_op(operators);
@@ -408,7 +395,7 @@ Node* build_tree(const char* expr) {
     return result;
 }
 
-// Копирование дерева
+// копирование дерева
 Node* copy_tree(Node* root) {
     if (root == NULL) return NULL;
     
@@ -472,8 +459,8 @@ Node* common_factors_from_difference(Node* root) {
             if (right_expr && right_expr->type == NODE_OPERATOR && right_expr->data.op == '*') {
                 // сравниваем левые и правые части умножения
                 if (compare_trees(left_expr->left, right_expr->left)) {
-                    // копирование нужно, т.к. root мы удалим вместе с его врешинами и без копии
-                    // мы потеряем те значения, которые положили в новые узлы
+                    // копирование нужно, т.к. root мы удалим вместе с его врешинами и
+                    // без копии мы потеряем те значения, которые положили в новые узлы
                     left_factor = copy_tree(left_expr->left);
                     left_rest = copy_tree(left_expr->right);
                     right_rest = copy_tree(right_expr->right);
@@ -517,9 +504,7 @@ Node* common_factors_from_difference(Node* root) {
         
         // если нашли общий множитель
         if (left_factor != NULL) {
-            // создаем разность остатков
             Node* diff = create_operator_node('-', left_rest, right_rest);
-            // создаем произведение
             Node* result = create_operator_node('*', left_factor, diff);
             free_tree(root);
             return result;
@@ -532,25 +517,26 @@ Node* common_factors_from_difference(Node* root) {
 int main() {
     char expr[MAX_EXPR];
 
+    printf("Вынесение общих множителей из разности\n");
+    printf("Поддерживаемые операции: +, -, *, /, ^, скобки\n");
+    printf("Пример выражения: a * x - x * (c - d)\n");
     printf("Введите арифметическое выражение: ");
     
     fgets(expr, MAX_EXPR, stdin);
     expr[strcspn(expr, "\n")] = 0; // удаляем символ новой строки
     
     printf("\nИсходное выражение: %s\n", expr);
-    
-    // Строим дерево
+
     Node* tree = build_tree(expr);
     
     if (tree == NULL) {
         printf("Ошибка при построении дерева!\n");
         return 1;
     }
-    
+
     printf("\nДерево выражения:\n");
     print_tree(tree, 0);
-    
-    // Выполняем преобразование
+
     tree = common_factors_from_difference(tree);
     
     printf("\nПреобразованное выражение: ");
@@ -559,9 +545,9 @@ int main() {
     
     printf("\nДерево преобразованного выражения:\n");
     print_tree(tree, 0);
-    
+
     // очистка памяти
     free_tree(tree);
-    
+
     return 0;
 }
