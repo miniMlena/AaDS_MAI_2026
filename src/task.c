@@ -185,56 +185,96 @@ void print_tree(Node *root, int depth) { // вызывается с deapth=0
     print_tree(root->left, depth + 1);
 }
 
-// Печать выражения (инфиксная запись)
-void print_expression(Node* root) {
-    if (root == NULL) return;
+int is_left_associative(char op) {
+    return op != '^';
+}
+
+int is_unary_minus(Node* node) {
+    return node->type == NODE_OPERATOR && 
+           node->data.op == '-' && 
+           node->left == NULL;
+}
+
+// проверка на скобки
+int need_brackets(Node* parent, Node* child, int is_right_child) {
+    if (child == NULL) return 0;
+    if (child->type != NODE_OPERATOR) return 0;
+
+    if (is_unary_minus(child)) return 1;
     
-    if (root->type == NODE_OPERATOR) {
-        int need_paren = 0;
-        
-        // Проверка необходимости скобок для унарного минуса
-        if (root->data.op == '-' && root->left == NULL) {
-            printf("-");
-            print_expression(root->right);
-            return;
-        }
-        
-        // Добавляем скобки для операторов с меньшим приоритетом
-        if (root->left && root->left->type == NODE_OPERATOR) {
-            int left_prec = get_priority(root->left->data.op);
-            int curr_prec = get_priority(root->data.op);
-            if (left_prec < curr_prec || 
-                (left_prec == curr_prec && !is_right_associative(root->data.op))) {
-                printf("(");
-                print_expression(root->left);
-                printf(")");
-            } else {
-                print_expression(root->left);
-            }
+    int parent_prec = get_priority(parent->data.op);
+    int child_prec = get_priority(child->data.op);
+
+    if (parent->data.op == '^') {
+        if (is_right_child) {
+            return (child->type == NODE_NUMBER && child->data.number < 0) || child->type == NODE_OPERATOR;
         } else {
-            print_expression(root->left);
+            return child_prec < parent_prec;
         }
-        
-        printf("%c", root->data.op);
-        
-        if (root->right && root->right->type == NODE_OPERATOR) {
-            int right_prec = get_priority(root->right->data.op);
-            int curr_prec = get_priority(root->data.op);
-            if (right_prec < curr_prec || 
-                (right_prec == curr_prec && is_right_associative(root->data.op))) {
-                printf("(");
-                print_expression(root->right);
-                printf(")");
-            } else {
-                print_expression(root->right);
-            }
+    }
+
+    if (child_prec < parent_prec) {
+        return 1;
+    }
+
+    if (child_prec == parent_prec) {
+        if (is_left_associative(parent->data.op)) {
+            return is_right_child;
         } else {
-            print_expression(root->right);
+            return !is_right_child;
         }
-    } else if (root->type == NODE_NUMBER) {
-        printf("%d", root->data.number);
-    } else if (root->type == NODE_VARIABLE) {
-        printf("%c", root->data.variable);
+    }
+    
+    return 0;
+}
+
+// печать выражения (инфиксно)
+void print_expression(Node* node) {
+    if (node == NULL) return;
+
+    if (node->type == NODE_NUMBER) {
+        printf("%d", node->data.number);
+        return;
+    }
+    
+    if (node->type == NODE_VARIABLE) {
+        printf("%c", node->data.variable);
+        return;
+    }
+    
+    // унарный минус
+    if (is_unary_minus(node)) {
+        printf("-");
+        // если правый потомок - оператор с низким приоритетом, нужны скобки
+        if (node->right->type == NODE_OPERATOR) {
+            printf("(");
+            print_expression(node->right);
+            printf(")");
+        } else {
+            print_expression(node->right);
+        }
+        return;
+    }
+
+    int need_left_paren = (node->left != NULL && node->left->type == NODE_OPERATOR && need_brackets(node, node->left, 0));
+    int need_right_paren = (node->right != NULL && node->right->type == NODE_OPERATOR && need_brackets(node, node->right, 1));
+
+    if (need_left_paren) {
+        printf("(");
+        print_expression(node->left);
+        printf(")");
+    } else {
+        print_expression(node->left);
+    }
+
+    printf(" %c ", node->data.op);
+
+    if (need_right_paren) {
+        printf("(");
+        print_expression(node->right);
+        printf(")");
+    } else {
+        print_expression(node->right);
     }
 }
 
