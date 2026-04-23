@@ -13,5 +13,32 @@
 4 Aads
 4 asdf
 2 mai
+2 nono
 3
 4 qwerty
+1 abc 20
+1 efg 99
+1 azerty -0.07
+1 aang 4.444
+1 batman 111
+1 MAI 1000
+1 joy 5.5
+1 aqua 3.3
+3
+1 one 1.11
+1 two 2.22
+1 three 3.33
+1 four 4.44
+1 five 5.55
+1 six 6.66
+1 seven 7.77
+1 eight 8.88
+3
+4 joy
+4 efg
+1 seven 0.77
+4 six
+2 six
+2 fluffy
+2 efg
+3
