@@ -1,0 +1,17 @@
+3
+1 qwerty 3.14
+1 Aads 5.0
+3
+1 abc abc
+1 mai 4.5
+1 mai -10
+1 milena 8.8888
+3
+1 live -10
+1 laugh 100
+1 love 2.71
+4 Aads
+4 asdf
+2 mai
+3
+4 qwerty
